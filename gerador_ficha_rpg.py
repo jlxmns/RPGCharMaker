@@ -1,7 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 
-api_key = st.secrets["API_KEY"]
+api_key = st.secrets("API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-2.0-flash")
 
@@ -40,6 +40,7 @@ skill = st.text_input("O que você diria que é a maior habilidade do seu person
 complexity = st.selectbox("Você prefere um personagem com jogabilidade mais simples ou mais complexa?", experience_choices)
 traits = st.text_input("O seu personagem tem algum traço de personalidade notável? Ex: 'covarde, mas esperto', 'barulhento e orgulhoso', 'silencioso e apático', etc.")
 unique_feature_choice = st.selectbox("Você quer que seu personagem tenha alguma característica misteriosa ou especial?", ["Não", "Sim"])
+unique_feature = None
 if unique_feature_choice == "Sim":
     unique_feature = st.text_input("Informe a característica: (ex: espada amaldiçoada, companheiro animal, linhagem secreta")
 
@@ -54,12 +55,12 @@ if st.button("Gerar Personagem"):
                   f"A maior habilidade do personagem é: {skill}"
                   f"Preferência por complexidade em termos de jogabilidade: {complexity}"
                   f"Traços de personalidade notáveis: {traits}")
-        if unique_feature_choice:
+        if unique_feature:
             prompt += f"Característica especial: {unique_feature}"
         prompt += ("Também inclua na ficha:"
                    f"Nome do personagem: {nome}"
-                   f"Gênero: {genero}",
-                   f"Idade: {idade}",
+                   f"Gênero: {genero}"
+                   f"Idade: {idade}"
                    "Nível inicial: 1"
                    "A resposta deve estar formatada no formato padrão do D&D:"
                    "** Informações Gerais **"
