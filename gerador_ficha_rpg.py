@@ -167,17 +167,6 @@ def preencher_pdf(character_data, template_path):
 # Options
 genders_options = ["Masculino", "Feminino", "Não binário", "Outro"]
 races_options = ["Anão", "Elfo", "Halfling", "Humano", "Draconato", "Gnomo", "Meio-Elfo", "Meio-Orc", "Tiefling"]
-subraces_options = {
-    "Anão": ["Anão da Colina", "Anão da Montanha"],
-    "Elfo": ["Alto Elfo", "Elfo da Floresta", "Elfo Negro (Drow)"],
-    "Halfling": ["Halfling Pés-Leves", "Halfling Robusto"],
-    "Humano": [],
-    "Draconato": [],
-    "Gnomo": ["Gnomo da Floresta", "Gnomo das Rochas"],
-    "Meio-Elfo": [],
-    "Meio-Orc": [],
-    "Tiefling": []
-}
 alignment_options = ["Bom e leal", "Bom e neutro", "Bom e caótico", "Neutro e leal", "Verdadeiramente neutro",
                      "Neutro e caótico", "Mau e leal", "Mau e neutro", "Mau e caótico"]
 attack_options = ["Físico", "Magia"]
@@ -210,11 +199,7 @@ with col_form:
 
         nome = st.text_input("Nome do personagem:", value=form_data["nome"])
         genero = st.selectbox("Gênero:", genders_options, index=0)
-        race = st.selectbox("Raça:", races_options, index=1)
-        subrace = None
-        if(subraces_options[race]):
-            subrace = st.selectbox("Escolha uma Sub-Raça de " + race, subraces_options[race], index=0)
-            
+        race = st.selectbox("Raça:", races_options, index=1)  
         idade = st.number_input("Idade:", min_value=1, value=form_data["idade"])
         role = st.text_input("Papel no grupo (ex: suporte, tanque, dano):", value=form_data["role"])
         alignment = st.selectbox("Tendência (Alinhamento):", alignment_options, index=0)
