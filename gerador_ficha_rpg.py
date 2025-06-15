@@ -14,10 +14,23 @@ def gerar_resposta_gemini(prompt):
         return f"Erro ao gerar resposta: {str(e)}"
 
 # Options
-genders = ["Homem", "Mulher", "Não binário", "Outro"]
+genders = ["Masculino", "Feminino", "Não binário", "Outro"]
+races = ["Anão", "Elfo", "Halfling", "Humano", "Draconato", "Gnomo", "Meio-Elfo", "Meio-Orc", "Tiefling"]
+subraces = {
+    "Anão": ["Anão da Colina", "Anão da Montanha"],
+    "Elfo": ["Alto Elfo", "Elfo da Floresta", "Elfo Negro (Drow)"],
+    "Halfling": ["Halfling Pés-Leves", "Halfling Robusto"],
+    "Humano": [],
+    "Draconato": [],
+    "Gnomo": ["Gnomo da Floresta", "Gnomo das Rochas"],
+    "Meio-Elfo": [],
+    "Meio-Orc": [],
+    "Tiefling": []
+}
 alignment_options = ["Bom e leal", "Bom e neutro", "Bom e caótico", "Neutro e leal", "Verdadeiramente neutro",
                      "Neutro e caótico", "Mau e leal", "Mau e neutro", "Mau e caótico"]
-style_options = ["Armas", "Magia", "Armas e Magia"]
+attack_options = ["Físico", "Magia"]
+style_options = ["Corpo a corpo", "Distância", "Versátil"]
 experience_choices = ["Simples", "Moderada", "Complexa"]
 
 # Configuração da página
@@ -28,12 +41,21 @@ st.title("Gerador de Personagem de RPG")
 # Infos básicas
 nome = st.text_input("Qual o nome do personagem?")
 genero = st.selectbox("Qual o gênero do personagem?", genders)
+race = st.selectbox("Qual a raça do personagem?", races)
+# Interface
+subrace = None
+if subraces[race]:
+    subrace = st.selectbox(
+        f"Escolha uma sub-raça de {race}:", 
+        subraces[race]
+    )
 idade = st.number_input("Qual a idade do personagem?", min_value=12)
 
 # Sobre a classe
 role = st.text_input("Qual tipo de papel você gostaria de desempenhar no grupo? Ex: lutador, suporte, furtivo, versátil, etc.")
 alignment = st.selectbox("Você diria que seu personagem é:", alignment_options)
-style = st.selectbox("Quando você pensa no seu personagem, você pensa mais nele usando magia, armas ou uma combinação dos dois?", style_options)
+attack = st.selectbox("Como é o tipo de habilidade do seu personagem? Ele utiliza meios físicos (armas, flechas, punhos) ou magia?", attack_options)
+style = st.selectbox("Como é o posicionamento do seu personagem em combate? Você pensa mais nele na linha de frente corpo a corpo ou à distância?", style_options)
 background = st.text_input("Como você descreveria a origem do seu personagem? Ex: nobre, criminoso, hermitão, sábio, artesão, etc.")
 motivation = st.text_input("O que mais motiva o seu personagem? Ex: vingança, curiosidade, justiça, redenção, etc.")
 skill = st.text_input("O que você diria que é a maior habilidade do seu personagem? Ex: ele é muito furtivo, ele sabe muito sobre história, etc")
@@ -59,6 +81,8 @@ if st.button("Gerar Personagem"):
             prompt += f"Característica especial: {unique_feature}"
         prompt += ("Também inclua na ficha:"
                    f"Nome do personagem: {nome}"
+                   f"Raça: {race}"
+                   f"Subraça: {race}"
                    f"Gênero: {genero}"
                    f"Idade: {idade}"
                    "Nível inicial: 1"
