@@ -12,7 +12,7 @@ api_key = st.secrets["API_KEY"]
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-2.0-flash")
 
-PDF_TEMPLATE_PATH = "ficha_personagem_completavel.pdf"
+PDF_TEMPLATE_PATH = "ficha_personagem_template.pdf"
 
 def gerar_resposta_gemini(prompt):
     """Gera conteúdo usando a API do Gemini."""
@@ -164,19 +164,25 @@ def preencher_pdf(character_data, template_path):
     
     return output_path
 
-def listar_campos_pdf(template_path):
-    """Função auxiliar para listar todos os campos de um PDF."""
-    if not os.path.exists(template_path):
-        return ["Arquivo de template não encontrado."]
-    
-    doc = fitz.open(template_path)
-    field_names = []
-    for page_num, page in enumerate(doc, 1):
-        field_names.append(f"--- Página {page_num} ---")
-        for field in page.widgets():
-            field_names.append(f"Nome: '{field.field_name}', Tipo: {field.field_type_string}, Valor Padrão: '{field.field_value}'")
-    doc.close()
-    return field_names
+# Options
+genders_options = ["Masculino", "Feminino", "Não binário", "Outro"]
+races_options = ["Anão", "Elfo", "Halfling", "Humano", "Draconato", "Gnomo", "Meio-Elfo", "Meio-Orc", "Tiefling"]
+subraces_options = {
+    "Anão": ["Anão da Colina", "Anão da Montanha"],
+    "Elfo": ["Alto Elfo", "Elfo da Floresta", "Elfo Negro (Drow)"],
+    "Halfling": ["Halfling Pés-Leves", "Halfling Robusto"],
+    "Humano": [],
+    "Draconato": [],
+    "Gnomo": ["Gnomo da Floresta", "Gnomo das Rochas"],
+    "Meio-Elfo": [],
+    "Meio-Orc": [],
+    "Tiefling": []
+}
+alignment_options = ["Bom e leal", "Bom e neutro", "Bom e caótico", "Neutro e leal", "Verdadeiramente neutro",
+                     "Neutro e caótico", "Mau e leal", "Mau e neutro", "Mau e caótico"]
+attack_options = ["Físico", "Magia"]
+style_options = ["Corpo a corpo", "Distância", "Versátil"]
+complexity_options = ["Simples", "Moderada", "Complexa"]
 
 st.set_page_config(page_title="Gerador de Ficha de D&D", page_icon="🎲", layout="wide")
 
@@ -203,15 +209,21 @@ with col_form:
         form_data = st.session_state.form_values
 
         nome = st.text_input("Nome do personagem:", value=form_data["nome"])
+        genero = st.selectbox("Gênero:", genders_options, index=0)
+        race = st.selectbox("Raça:", races_options, index=1)
+        subrace = None
+        if(subraces_options[race]):
+            subrace = st.selectbox("Escolha uma Sub-Raça de " + race, subraces_options[race], index=0)
+            
         idade = st.number_input("Idade:", min_value=1, value=form_data["idade"])
-        genero = st.selectbox("Gênero:", ["Homem", "Mulher", "Não binário", "Outro"], index=0)
         role = st.text_input("Papel no grupo (ex: suporte, tanque, dano):", value=form_data["role"])
-        alignment = st.selectbox("Tendência (Alinhamento):", ["Bom e leal", "Bom e neutro", "Bom e caótico", "Neutro e leal", "Verdadeiramente neutro", "Neutro e caótico", "Mau e leal", "Mau e neutro", "Mau e caótico"], index=0)
-        style = st.selectbox("Estilo de combate:", ["Armas", "Magia", "Armas e Magia"], index=0)
+        alignment = st.selectbox("Tendência (Alinhamento):", alignment_options, index=0)
+        attack = st.selectbox("Como é o tipo de habilidade do seu personagem? Ele utiliza meios físicos (armas, flechas, punhos) ou magia?", attack_options, index=0)
+        style = st.selectbox("Estilo de combate:", style_options, index=0)
         background = st.text_input("Origem (ex: nobre, artesão, eremita):", value=form_data["background"])
         motivation = st.text_input("Motivação (ex: vingança, poder):", value=form_data["motivation"])
         skill = st.text_input("Maior Habilidade (ex: furtividade, persuasão):", value=form_data["skill"])
-        complexity = st.selectbox("Complexidade de jogabilidade:", ["Simples", "Moderada", "Complexa"], index=0)
+        complexity = st.selectbox("Complexidade de jogabilidade:", complexity_options, index=0)
         traits = st.text_input("Traço de personalidade notável:", value=form_data["traits"])
         unique_feature_choice = st.radio("Adicionar característica única/misteriosa?", ("Não", "Sim"), index=0)
         unique_feature = st.text_input("Qual característica?", value=form_data["unique_feature"]) if unique_feature_choice == "Sim" else ""
@@ -221,7 +233,7 @@ with col_form:
 if submit_button:
     with st.spinner("A IA está forjando seu personagem..."):
         st.session_state.form_values = {
-            "nome": nome, "genero": genero, "idade": idade, "role": role, "alignment": alignment, 
+            "nome": nome, "raca": race, "genero": genero, "idade": idade, "role": role, "alignment": alignment, 
             "style": style, "background": background, "motivation": motivation, "skill": skill,
             "complexity": complexity, "traits": traits, "unique_feature_choice": unique_feature_choice,
             "unique_feature": unique_feature
@@ -233,6 +245,7 @@ if submit_button:
 
         **Informações Gerais**:
         Nome: {nome}
+        Raça: {race}
         Gênero: {genero}
         Idade: {idade}
         Papel Desejado: {role}
@@ -320,19 +333,11 @@ with col_ficha:
                     label="📄 Baixar Ficha em PDF",
                     data=file,
                     file_name=f"ficha_{dados_personagem.get('Nome', 'personagem').replace(' ', '_')}.pdf",
-                    mime="application/pdf"
+                    mime="application/pdf",
+                    type="primary"
                 )
         
-        st.markdown(texto_gerado)
-
-        with st.expander("Ver dados extraídos para o PDF (para depuração)"):
-            st.json(dados_personagem)
+        st.write(texto_gerado)
             
     else:
-        st.info("Preencha o formulário à esquerda e clique em 'Gerar' para criar sua ficha.")
-
-st.sidebar.title("🛠️ Ferramentas de Desenvolvedor")
-if st.sidebar.checkbox("Listar campos do PDF para mapeamento"):
-    st.sidebar.info(f"Listando campos do arquivo: `{PDF_TEMPLATE_PATH}`")
-    campos = listar_campos_pdf(PDF_TEMPLATE_PATH)
-    st.sidebar.text_area("Campos encontrados:", "\n".join(campos), height=300)
+        st.info("Preencha o formulário à esquerda e clique em 'Gerar Ficha do Personagem' para criar sua ficha.")
